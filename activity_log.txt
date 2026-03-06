@@ -1,0 +1,4 @@
+# GitPulse Activity Log
+# This file is automatically maintained by GitPulse.
+# https://github.com/Nithinkumaru777/gitpulse-activity
+
