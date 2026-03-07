@@ -1,0 +1,6 @@
+# GitPulse ignores
+__pycache__/
+build/
+dist/
+config.json
+*.spec
