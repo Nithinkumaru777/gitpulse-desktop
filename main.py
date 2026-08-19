@@ -1159,12 +1159,13 @@ class GitPulseApp:
         hwnd = self.get_hwnd()
         if hwnd:
             ctypes.windll.user32.ShowWindow(hwnd, 0)  # SW_HIDE
-        if self.window:
+        elif self.window:
             try:
                 self.window.hide()
             except Exception:
                 pass
-        self.log("📌 Minimized to System Tray (Hidden Icons). GitPulse is running in background.")
+        ts = datetime.now().strftime("%H:%M:%S")
+        self.log_history.append(f"[{ts}]  📌 Minimized to System Tray (Hidden Icons). Running in background.")
 
     def toggle_window(self):
         if self.is_hidden:
@@ -1191,7 +1192,7 @@ class GitPulseApp:
         ts = datetime.now().strftime("%H:%M:%S")
         formatted = f"[{ts}]  {msg}"
         self.log_history.append(formatted)
-        if self.window:
+        if self.window and not self.is_hidden:
             try:
                 safe_msg = formatted.replace("'", "\\'").replace('"', '\\"')
                 self.window.evaluate_js(f"addLog('{safe_msg}')")
@@ -1312,7 +1313,7 @@ if __name__ == "__main__":
     def on_closing():
         if app_instance.is_exiting:
             return True
-        app_instance.hide_to_tray()
+        threading.Thread(target=app_instance.hide_to_tray, daemon=True).start()
         return False
 
     window.events.closing += on_closing
