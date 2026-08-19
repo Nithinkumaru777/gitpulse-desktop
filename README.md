@@ -2,6 +2,10 @@
 
 > **Keep your contribution graph alive with a modern, automated desktop application.**
 
+[![GitHub Release](https://img.shields.io/github/v/release/Nithinkumaru777/gitpulse-desktop?color=39d353&style=flat-square)](https://github.com/Nithinkumaru777/gitpulse-desktop/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue?style=flat-square)](https://github.com/Nithinkumaru777/gitpulse-desktop)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
 GitPulse is a lightweight, background-running Windows desktop application built with Python and PyWebView. It automatically manages timestamped activity commits to your connected GitHub repositories on a customizable schedule (default: 10 minutes), keeping your GitHub graph active and green effortlessly.
 
 ---
@@ -19,23 +23,21 @@ GitPulse is a lightweight, background-running Windows desktop application built 
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Download & Installation
 
-### Option 1: Using the Installer (`GitPulse_Setup.exe`)
-1. Download **`GitPulse_Setup.exe`** from the project releases.
-2. Launch the Setup Wizard and select your preferred installation directory.
-3. Choose shortcut options (Desktop & Start Menu) and click **Install Now**.
-4. Launch GitPulse, paste your GitHub Repository Link, and click **START PULSING**.
+### 📥 Download Installer (`GitPulse_Setup.exe`)
+[**Click Here to Download Latest GitPulse_Setup.exe**](https://github.com/Nithinkumaru777/gitpulse-desktop/releases/latest)
 
-### Option 2: Running Standalone Executable (`GitPulse.exe`)
-1. Download **`GitPulse.exe`** from the `dist/` directory.
-2. Double-click `GitPulse.exe` to launch the application.
+1. Launch **`GitPulse_Setup.exe`**.
+2. Choose your desired installation folder (e.g. `C:\Program Files\GitPulse` or `D:\GitPulse`).
+3. Select shortcut options (Desktop & Start Menu) and click **Install Now**.
+4. Launch GitPulse, paste your target GitHub Repository Link, and click **START PULSING**.
 
 ---
 
 ## 💻 How It Works
 
-1. **Repository Connection**: GitPulse connects to any local Git repository or clones a GitHub URL.
+1. **Repository Connection**: GitPulse connects to any target Git repository or clones a GitHub URL.
 2. **Automated Commit Loop**: At your configured interval (e.g., 10 minutes), GitPulse appends a timestamp log entry to `activity_log.txt`.
 3. **Git Push Sequence**: Executes a safe `git pull → git add → git commit → git push` sequence in a background thread.
 4. **Resilient & Silent**: Silently handles network dropouts and retries on the next scheduled cycle without interrupting your work.
@@ -44,15 +46,11 @@ GitPulse is a lightweight, background-running Windows desktop application built 
 
 ## 🛠 Building from Source
 
-### Prerequisites
-- **Python 3.10+**
-- **Git for Windows** / MinGit
-
 ### Setup Environment
 ```bash
-# Clone this repository
-git clone https://github.com/Nithinkumaru777/gitpulse-activity.git
-cd gitpulse-activity
+# Clone this public repository
+git clone https://github.com/Nithinkumaru777/gitpulse-desktop.git
+cd gitpulse-desktop
 
 # Install dependencies
 pip install pywebview pystray pillow pyinstaller
@@ -63,7 +61,7 @@ pip install pywebview pystray pillow pyinstaller
 python main.py
 ```
 
-### Build Standalone Executable
+### Build Standalone Executable & Setup Installer
 ```bash
 # Build main GitPulse app
 pyinstaller --noconsole --onefile --add-data "gitpulse_icon.png;." --add-data "gitpulse_icon.ico;." --icon=gitpulse_icon.ico --name=GitPulse main.py
@@ -77,7 +75,7 @@ pyinstaller --noconsole --onefile --add-data "dist/GitPulse.exe;payload" --add-d
 ## 📄 Repository Structure
 
 ```
-gitpulse-activity/
+gitpulse-desktop/
 ├── main.py                # Main PyWebView Application & System Tray Logic
 ├── installer.py           # Setup Wizard & Installer Application
 ├── gitpulse_icon.ico      # Application Window & System Tray Icon
@@ -91,4 +89,4 @@ gitpulse-activity/
 
 ## 📜 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License.
