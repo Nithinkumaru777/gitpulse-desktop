@@ -54,28 +54,72 @@ def get_default_install_dir() -> str:
     return str(Path(local_appdata) / "Programs" / "GitPulse")
 
 
-def create_windows_shortcut(target_exe: str, shortcut_path: str, working_dir: str = None, icon_path: str = None):
+def create_desktop_shortcuts(target_exe: str):
     target_exe = os.path.abspath(target_exe)
-    shortcut_path = os.path.abspath(shortcut_path)
-    working_dir = working_dir or os.path.dirname(target_exe)
-    icon_path = icon_path or target_exe
+    working_dir = os.path.dirname(target_exe)
+    icon_path = os.path.join(working_dir, "gitpulse_icon.ico")
+    if not os.path.exists(icon_path):
+        icon_path = target_exe
 
-    ps_script = f"""
-$ws = New-Object -ComObject WScript.Shell
-$sc = $ws.CreateShortcut('{shortcut_path}')
-$sc.TargetPath = '{target_exe}'
-$sc.WorkingDirectory = '{working_dir}'
-$sc.IconLocation = '{icon_path}'
-$sc.Save()
+    ps_code = f"""
+$d1 = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
+$d2 = "$env:USERPROFILE\\Desktop"
+$d3 = "$env:USERPROFILE\\OneDrive\\Desktop"
+$d4 = "C:\\Users\\Public\\Desktop"
+$desktops = @($d1, $d2, $d3, $d4) | Select-Object -Unique
+
+foreach ($d in $desktops) {{
+    if ($d -and (Test-Path $d)) {{
+        $shortcutPath = Join-Path $d "GitPulse.lnk"
+        $ws = New-Object -ComObject WScript.Shell
+        $sc = $ws.CreateShortcut($shortcutPath)
+        $sc.TargetPath = '{target_exe}'
+        $sc.WorkingDirectory = '{working_dir}'
+        $sc.IconLocation = '{icon_path}'
+        $sc.Save()
+    }}
+}}
 """
-    encoded = base64.b64encode(ps_script.encode('utf-16le')).decode('utf-8')
-    res = subprocess.run(
+    encoded = base64.b64encode(ps_code.encode('utf-16le')).decode('utf-8')
+    subprocess.run(
         ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
         capture_output=True,
         text=True,
         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
     )
-    return Path(shortcut_path).exists()
+
+
+def create_start_menu_shortcut(target_exe: str):
+    target_exe = os.path.abspath(target_exe)
+    working_dir = os.path.dirname(target_exe)
+    icon_path = os.path.join(working_dir, "gitpulse_icon.ico")
+    if not os.path.exists(icon_path):
+        icon_path = target_exe
+
+    ps_code = f"""
+$p1 = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
+$p2 = "$env:APPDATA\\Microsoft\\Windows\\Start Menu\\Programs"
+$programs = @($p1, $p2) | Select-Object -Unique
+
+foreach ($p in $programs) {{
+    if ($p -and (Test-Path $p)) {{
+        $shortcutPath = Join-Path $p "GitPulse.lnk"
+        $ws = New-Object -ComObject WScript.Shell
+        $sc = $ws.CreateShortcut($shortcutPath)
+        $sc.TargetPath = '{target_exe}'
+        $sc.WorkingDirectory = '{working_dir}'
+        $sc.IconLocation = '{icon_path}'
+        $sc.Save()
+    }}
+}}
+"""
+    encoded = base64.b64encode(ps_code.encode('utf-16le')).decode('utf-8')
+    subprocess.run(
+        ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+        capture_output=True,
+        text=True,
+        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+    )
 
 
 def set_autostart_registry(exe_path: str, enable: bool):
@@ -384,14 +428,10 @@ class InstallerApi:
 
                 # Shortcuts
                 if create_desktop:
-                    desktop_dir = get_user_shell_folder("Desktop")
-                    desktop_link = desktop_dir / "GitPulse.lnk"
-                    create_windows_shortcut(str(target_exe), str(desktop_link))
+                    create_desktop_shortcuts(str(target_exe))
 
                 if create_startmenu:
-                    programs_dir = get_user_shell_folder("Programs")
-                    start_link = programs_dir / "GitPulse.lnk"
-                    create_windows_shortcut(str(target_exe), str(start_link))
+                    create_start_menu_shortcut(str(target_exe))
 
                 self.update_progress(80, "Configuring Windows startup registry...")
                 time.sleep(0.4)
