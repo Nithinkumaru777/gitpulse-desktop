@@ -495,12 +495,18 @@ def execute_full_quadrant_cycle(
                 except Exception as r_err:
                     log_callback(f"⚠️  Review submit skipped: {r_err}")
 
-            # Merge PR (squash merge creates a commit on default branch for the Commits quadrant!)
-            github_api_request("PUT", f"repos/{owner}/{repo_name}/pulls/{pr_number}/merge", token, {
-                "merge_method": "squash",
-                "commit_title": f"Merge pull request #{pr_number} from {branch_name}",
-            })
-            log_callback(f"🚀  Merged Pull Request #{pr_number} into {default_branch}")
+            # Merge or close PR depending on whether Commits quadrant is enabled
+            if activities.get("commits", True):
+                github_api_request("PUT", f"repos/{owner}/{repo_name}/pulls/{pr_number}/merge", token, {
+                    "merge_method": "squash",
+                    "commit_title": f"Merge pull request #{pr_number} from {branch_name}",
+                })
+                log_callback(f"🚀  Merged Pull Request #{pr_number} into {default_branch}")
+            else:
+                github_api_request("PATCH", f"repos/{owner}/{repo_name}/pulls/{pr_number}", token, {
+                    "state": "closed",
+                })
+                log_callback(f"🏁  Closed Pull Request #{pr_number} without merging (Commits disabled: no commit added)")
 
             # Cleanup remote branch
             try:
@@ -1171,22 +1177,18 @@ HTML_CONTENT = """<!DOCTYPE html>
         ACTIVITIES TO MARK:
       </span>
       <div class="activity-toggles">
-        <label class="toggle-chip active" id="chipCommits" onclick="toggleActivity('commits')">
-          <input type="checkbox" id="chkCommits" checked>
+        <div class="toggle-chip active" id="chipCommits" onclick="toggleActivity('commits')">
           <span>📦 Commits</span>
-        </label>
-        <label class="toggle-chip active" id="chipIssues" onclick="toggleActivity('issues')">
-          <input type="checkbox" id="chkIssues" checked>
+        </div>
+        <div class="toggle-chip active" id="chipIssues" onclick="toggleActivity('issues')">
           <span>🐛 Issues</span>
-        </label>
-        <label class="toggle-chip active" id="chipPrs" onclick="toggleActivity('prs')">
-          <input type="checkbox" id="chkPrs" checked>
+        </div>
+        <div class="toggle-chip active" id="chipPrs" onclick="toggleActivity('prs')">
           <span>🔀 Pull Requests</span>
-        </label>
-        <label class="toggle-chip active" id="chipReviews" onclick="toggleActivity('reviews')">
-          <input type="checkbox" id="chkReviews" checked>
+        </div>
+        <div class="toggle-chip active" id="chipReviews" onclick="toggleActivity('reviews')">
           <span>🔍 Code Reviews</span>
-        </label>
+        </div>
       </div>
     </div>
 
@@ -1436,12 +1438,12 @@ HTML_CONTENT = """<!DOCTYPE html>
     function toggleActivity(key) {
       activities[key] = !activities[key];
       const chip = document.getElementById("chip" + key.charAt(0).toUpperCase() + key.slice(1));
-      const chk = document.getElementById("chk" + key.charAt(0).toUpperCase() + key.slice(1));
-      chk.checked = activities[key];
-      if (activities[key]) {
-        chip.classList.add("active");
-      } else {
-        chip.classList.remove("active");
+      if (chip) {
+        if (activities[key]) {
+          chip.classList.add("active");
+        } else {
+          chip.classList.remove("active");
+        }
       }
       if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.set_activities(activities);
@@ -1594,6 +1596,9 @@ class JsApi:
     def connect_url(self, raw_url: str):
         parsed = parse_github_url(raw_url)
         if not parsed:
+            parts = raw_url.strip().replace('.git', '').rstrip('/').split('github.com/')[-1].split('/')
+            if len(parts) == 1 and parts[0]:
+                return {"status": "error", "error": f"Please append a repository name (e.g. {parts[0]}/gitpulse-activity)"}
             return {"status": "error", "error": "Invalid GitHub repository URL"}
         owner, repo_name = parsed
 
